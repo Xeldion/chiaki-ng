@@ -439,6 +439,12 @@ class Settings : public QObject
 		bool GetMouseTouchEnabled() const;
 		void SetMouseTouchEnabled(bool enabled);
 
+		bool GetMouseToStickEnabled() const;
+		void SetMouseToStickEnabled(bool enabled);
+
+		int GetMouseStickSensitivity() const;
+		void SetMouseStickSensitivity(int sensitivity);
+
 		bool GetDpadTouchEnabled() const;
 		void SetDpadTouchEnabled(bool enabled);
 
@@ -731,6 +737,12 @@ class Settings : public QObject
 		void SetControllerButtonMapping(int, Qt::Key);
 		QMap<int, Qt::Key> GetControllerMapping();
 		QMap<Qt::Key, int> GetControllerMappingForDecoding();
+
+		QMap<Qt::MouseButton, int> GetMouseButtonMapping();
+		void SetMouseButtonMapping(Qt::MouseButton button, int chiaki_button);
+		void ClearMouseButtonMapping();
+		static QString GetMouseButtonName(Qt::MouseButton button);
+		static QList<Qt::MouseButton> GetMappableMouseButtons();
 
 	signals:
 		void RegisteredHostsUpdated();

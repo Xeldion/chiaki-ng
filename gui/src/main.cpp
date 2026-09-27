@@ -20,6 +20,7 @@ int main(int argc, char *argv[]) { return real_main(argc, argv); }
 #include <discoverymanager.h>
 #include <qmlmainwindow.h>
 #include <QApplication>
+#include <QSettings>
 #include <QtTypes>
 
 #ifdef CHIAKI_ENABLE_CLI
@@ -122,6 +123,17 @@ int real_main(int argc, char *argv[])
 	QGuiApplication::setAttribute(Qt::AA_ShareOpenGLContexts);
 #ifdef CHIAKI_HAVE_WEBENGINE
 	QtWebEngineQuick::initialize();
+#endif
+#if defined(Q_OS_LINUX)
+	// Mouse-to-right-stick aim relies on cursor warping (QCursor::setPos),
+	// which is a no-op on native Wayland. If the feature is enabled, force the
+	// XWayland (xcb) platform so aiming works. Respect an explicit override.
+	if(qgetenv("XDG_SESSION_TYPE") == "wayland" && qgetenv("QT_QPA_PLATFORM").isEmpty())
+	{
+		QSettings preflight(QStringLiteral("Chiaki"), QStringLiteral("Chiaki"));
+		if(preflight.value(QStringLiteral("settings/mouse_to_stick_enabled"), false).toBool())
+			qputenv("QT_QPA_PLATFORM", "xcb");
+	}
 #endif
 	QApplication app(argc, argv);
 

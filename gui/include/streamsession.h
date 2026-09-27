@@ -95,6 +95,9 @@ class SdeckHapticsWorker;
 		bool enable_keyboard;
 		bool keyboard_controller_enabled;
 		bool mouse_touch_enabled;
+		bool mouse_to_stick_enabled;
+		int mouse_stick_sensitivity;
+		QMap<Qt::MouseButton, int> mouse_button_map;
 		bool enable_dualsense;
 		bool auto_regist;
 		float haptic_override;
@@ -229,6 +232,10 @@ class StreamSession : public QObject
 		float haptic_override;
 		bool keyboard_controller_enabled;
 		bool mouse_touch_enabled;
+		bool mouse_to_stick_enabled;
+		int mouse_stick_sensitivity;
+		QMap<Qt::MouseButton, int> mouse_button_map;
+		QTimer *mouse_stick_reset_timer;
 		bool dpad_regular;
 		bool dpad_regular_touch_switched;
 		uint dpad_touch_shortcut1;
@@ -313,6 +320,7 @@ class StreamSession : public QObject
 #endif
 		void AdjustAdaptiveTriggerPacket(uint8_t *buf, uint8_t type);
 		void WaitHaptics();
+		void SetControllerButton(int button, bool press_event);
 
 	private slots:
 		void InitAudio(unsigned int channels, unsigned int rate);
@@ -367,6 +375,7 @@ class StreamSession : public QObject
 		void HandleMouseReleaseEvent(QMouseEvent *event);
 		void HandleMousePressEvent(QMouseEvent *event);
 		void HandleMouseMoveEvent(QMouseEvent *event, qreal width, qreal height);
+		void HandleMouseStickMove(qreal dx, qreal dy);
 #if CHIAKI_GUI_ENABLE_SPEEX
 		bool ProcessMicFrame(int16_t *echo_buf);
 #endif
@@ -400,6 +409,7 @@ class StreamSession : public QObject
 		void UpdateGamepads();
 		void DpadSendFeedbackState();
 		void SendFeedbackState();
+		void ResetMouseStick();
 };
 
 Q_DECLARE_METATYPE(ChiakiQuitReason)

@@ -81,6 +81,10 @@ class QmlSettings : public QObject
     Q_PROPERTY(QString psnAuthTokenExpiry READ psnAuthTokenExpiry WRITE setPsnAuthTokenExpiry NOTIFY psnAuthTokenExpiryChanged)
     Q_PROPERTY(QString psnAccountId READ psnAccountId WRITE setPsnAccountId NOTIFY psnAccountIdChanged)
     Q_PROPERTY(bool mouseTouchEnabled READ mouseTouchEnabled WRITE setMouseTouchEnabled NOTIFY mouseTouchEnabledChanged)
+    Q_PROPERTY(bool mouseToStickEnabled READ mouseToStickEnabled WRITE setMouseToStickEnabled NOTIFY mouseToStickEnabledChanged)
+    Q_PROPERTY(int mouseStickSensitivity READ mouseStickSensitivity WRITE setMouseStickSensitivity NOTIFY mouseStickSensitivityChanged)
+    Q_PROPERTY(QVariantList mouseButtonMapping READ mouseButtonMapping NOTIFY mouseButtonMappingChanged)
+    Q_PROPERTY(QVariantList controllerButtonOptions READ controllerButtonOptions CONSTANT)
     Q_PROPERTY(bool keyboardEnabled READ keyboardEnabled WRITE setKeyboardEnabled NOTIFY keyboardEnabledChanged)
     Q_PROPERTY(bool dpadTouchEnabled READ dpadTouchEnabled WRITE setDpadTouchEnabled NOTIFY dpadTouchEnabledChanged)
     Q_PROPERTY(bool iDROnFECFailureEnabled READ iDROnFECFailureEnabled WRITE setIDROnFECFailureEnabled NOTIFY iDROnFECFailureEnabledChanged)
@@ -547,6 +551,12 @@ public:
     bool mouseTouchEnabled() const;
     void setMouseTouchEnabled(bool enabled);
 
+    bool mouseToStickEnabled() const;
+    void setMouseToStickEnabled(bool enabled);
+
+    int mouseStickSensitivity() const;
+    void setMouseStickSensitivity(int sensitivity);
+
     bool keyboardEnabled() const;
     void setKeyboardEnabled(bool enabled);
 
@@ -596,11 +606,14 @@ public:
     QStringList availableAudioInDevices() const;
     QVariantList registeredHosts() const;
     QVariantList controllerMapping() const;
+    QVariantList mouseButtonMapping() const;
+    QVariantList controllerButtonOptions() const;
     QStringList profiles() const;
 
     Q_INVOKABLE void deleteRegisteredHost(int index);
     Q_INVOKABLE void refreshAudioDevices();
     Q_INVOKABLE QString changeControllerKey(int button, int key);
+    Q_INVOKABLE void changeMouseButton(int mouseButton, int chiakiButton);
     Q_INVOKABLE void clearKeyMapping();
     Q_INVOKABLE void exportSettings();
     Q_INVOKABLE QString chooseSteamBasePath();
@@ -681,6 +694,9 @@ signals:
     void psnAuthTokenExpiryChanged();
     void psnAccountIdChanged();
     void mouseTouchEnabledChanged();
+    void mouseToStickEnabledChanged();
+    void mouseStickSensitivityChanged();
+    void mouseButtonMappingChanged();
     void keyboardEnabledChanged();
     void dpadTouchEnabledChanged();
     void dpadTouchIncrementChanged();

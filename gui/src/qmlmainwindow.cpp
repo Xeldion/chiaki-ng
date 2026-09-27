@@ -29,6 +29,7 @@ extern "C" {
 #include <QStandardPaths>
 #include <QCoreApplication>
 #include <QGuiApplication>
+#include <QCursor>
 #include <QFile>
 #include <QWidget>
 #include <QLabel>
@@ -7547,8 +7548,24 @@ bool QmlMainWindow::event(QEvent *event)
         if (static_cast<QMouseEvent*>(event)->source() != Qt::MouseEventNotSynthesized)
             return true;
         if (session && !grab_input) {
-            if (event->type() == QEvent::MouseMove)
-                session->HandleMouseMoveEvent(static_cast<QMouseEvent*>(event), width(), height());
+            if (event->type() == QEvent::MouseMove) {
+                QMouseEvent *me = static_cast<QMouseEvent*>(event);
+                if (settings->GetMouseToStickEnabled()) {
+                    // Relative aim: measure offset from the window center, feed it
+                    // to the right stick, then warp the cursor back so the next
+                    // event is another relative delta. Requires X11/XWayland
+                    // (QCursor::setPos is a no-op on native Wayland).
+                    QPointF center(width() / 2.0, height() / 2.0);
+                    qreal dx = me->position().x() - center.x();
+                    qreal dy = me->position().y() - center.y();
+                    if (dx != 0.0 || dy != 0.0) {
+                        session->HandleMouseStickMove(dx, dy);
+                        QCursor::setPos(mapToGlobal(center.toPoint()));
+                    }
+                } else {
+                    session->HandleMouseMoveEvent(me, width(), height());
+                }
+            }
             else if (event->type() == QEvent::MouseButtonPress)
                 session->HandleMousePressEvent(static_cast<QMouseEvent*>(event));
             else if (event->type() == QEvent::MouseButtonRelease)

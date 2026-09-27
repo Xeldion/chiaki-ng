@@ -2408,6 +2408,56 @@ DialogView {
                                 }
                             }
                         }
+                        CheckBox {
+                            text: qsTr("Enable Mouse To Right Stick")
+                            checked: Chiaki.settings.mouseToStickEnabled
+                            onToggled: Chiaki.settings.mouseToStickEnabled = checked
+                            Layout.alignment: Qt.AlignRight
+                        }
+                        RowLayout {
+                            spacing: 10
+                            Layout.alignment: Qt.AlignRight
+                            Label {
+                                Layout.alignment: Qt.AlignRight
+                                text: qsTr("Mouse Stick Sensitivity:")
+                            }
+                            C.Slider {
+                                Layout.preferredWidth: 250
+                                from: 1
+                                to: 2000
+                                stepSize: 1
+                                value: Chiaki.settings.mouseStickSensitivity
+                                onMoved: Chiaki.settings.mouseStickSensitivity = value
+                            }
+                        }
+                        Label {
+                            Layout.alignment: Qt.AlignRight
+                            text: qsTr("Mouse Button Mapping")
+                            font.bold: true
+                        }
+                        Repeater {
+                            id: mouseButtonRepeater
+                            model: Chiaki.settings.mouseButtonMapping
+
+                            RowLayout {
+                                spacing: 20
+
+                                Label {
+                                    Layout.preferredWidth: 200
+                                    horizontalAlignment: Text.AlignRight
+                                    text: modelData.mouseButtonName
+                                }
+
+                                C.ComboBox {
+                                    Layout.preferredWidth: 170
+                                    model: Chiaki.settings.controllerButtonOptions
+                                    textRole: "buttonName"
+                                    valueRole: "buttonValue"
+                                    currentIndex: modelData.comboIndex
+                                    onActivated: Chiaki.settings.changeMouseButton(modelData.mouseButtonValue, currentValue)
+                                }
+                            }
+                        }
                         Repeater {
                             id: chiakiKeys
                             model: Chiaki.settings.controllerMapping

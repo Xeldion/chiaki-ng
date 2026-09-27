@@ -809,6 +809,28 @@ void QmlSettings::setMouseTouchEnabled(bool enabled)
     emit mouseTouchEnabledChanged();
 }
 
+bool QmlSettings::mouseToStickEnabled() const
+{
+    return settings->GetMouseToStickEnabled();
+}
+
+void QmlSettings::setMouseToStickEnabled(bool enabled)
+{
+    settings->SetMouseToStickEnabled(enabled);
+    emit mouseToStickEnabledChanged();
+}
+
+int QmlSettings::mouseStickSensitivity() const
+{
+    return settings->GetMouseStickSensitivity();
+}
+
+void QmlSettings::setMouseStickSensitivity(int sensitivity)
+{
+    settings->SetMouseStickSensitivity(sensitivity);
+    emit mouseStickSensitivityChanged();
+}
+
 bool QmlSettings::keyboardEnabled() const
 {
     return settings->GetKeyboardEnabled();
@@ -1761,6 +1783,53 @@ QVariantList QmlSettings::controllerMapping() const
     return out;
 }
 
+QVariantList QmlSettings::mouseButtonMapping() const
+{
+    auto map = settings->GetMouseButtonMapping();
+    // Build the same ordered list controllerButtonOptions() exposes so we can
+    // hand QML a deterministic combo index (index 0 = "Unbound").
+    QList<int> ordered;
+    ordered.append(0);
+    auto buttons = settings->GetControllerMapping();
+    for (auto it = buttons.cbegin(); it != buttons.cend(); ++it)
+        ordered.append(it.key());
+
+    QVariantList out;
+    for (Qt::MouseButton button : Settings::GetMappableMouseButtons()) {
+        int chiaki = map.value(button, 0);
+        QVariantMap m;
+        m["mouseButtonName"] = Settings::GetMouseButtonName(button);
+        m["mouseButtonValue"] = static_cast<int>(button);
+        m["buttonValue"] = chiaki;
+        m["comboIndex"] = ordered.indexOf(chiaki);
+        out.append(m);
+    }
+    return out;
+}
+
+QVariantList QmlSettings::controllerButtonOptions() const
+{
+    QVariantList out;
+    QVariantMap none;
+    none["buttonName"] = tr("Unbound");
+    none["buttonValue"] = 0;
+    out.append(none);
+    auto key_map = settings->GetControllerMapping();
+    for (auto it = key_map.cbegin(); it != key_map.cend(); ++it) {
+        QVariantMap m;
+        m["buttonName"] = Settings::GetChiakiControllerButtonName(it.key());
+        m["buttonValue"] = it.key();
+        out.append(m);
+    }
+    return out;
+}
+
+void QmlSettings::changeMouseButton(int mouseButton, int chiakiButton)
+{
+    settings->SetMouseButtonMapping(static_cast<Qt::MouseButton>(mouseButton), chiakiButton);
+    emit mouseButtonMappingChanged();
+}
+
 QString QmlSettings::stringForDpadShortcut() const
 {
     QString shortcut_string = "";
@@ -1946,6 +2015,8 @@ void QmlSettings::refreshAllKeys()
     emit psnAuthTokenExpiryChanged();
     emit psnAccountIdChanged();
     emit mouseTouchEnabledChanged();
+    emit mouseToStickEnabledChanged();
+    emit mouseStickSensitivityChanged();
     emit keyboardEnabledChanged();
     emit dpadTouchEnabledChanged();
     emit iDROnFECFailureEnabledChanged();
@@ -1960,6 +2031,7 @@ void QmlSettings::refreshAllKeys()
     emit streamMenuShortcut3Changed();
     emit streamMenuShortcut4Changed();
     emit controllerMappingChanged();
+    emit mouseButtonMappingChanged();
     emit packetLossReportedMaxChanged();
     emit currentProfileChanged();
     emit profilesChanged();

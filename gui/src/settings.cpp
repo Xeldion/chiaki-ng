@@ -1011,6 +1011,24 @@ void Settings::SetMouseTouchEnabled(bool enabled)
 	settings.setValue("settings/mouse_touch_enabled", enabled);
 }
 
+bool Settings::GetMouseToStickEnabled() const
+{
+	return settings.value("settings/mouse_to_stick_enabled", false).toBool();
+}
+void Settings::SetMouseToStickEnabled(bool enabled)
+{
+	settings.setValue("settings/mouse_to_stick_enabled", enabled);
+}
+
+int Settings::GetMouseStickSensitivity() const
+{
+	return settings.value("settings/mouse_stick_sensitivity", 500).toInt();
+}
+void Settings::SetMouseStickSensitivity(int sensitivity)
+{
+	settings.setValue("settings/mouse_stick_sensitivity", sensitivity);
+}
+
 
 bool Settings::GetDpadTouchEnabled() const
 {
@@ -2515,4 +2533,55 @@ QMap<Qt::Key, int> Settings::GetControllerMappingForDecoding()
 		result[it.value()] = it.key();
 	}
 	return result;
+}
+
+QList<Qt::MouseButton> Settings::GetMappableMouseButtons()
+{
+	return {
+		Qt::LeftButton,
+		Qt::RightButton,
+		Qt::MiddleButton,
+		Qt::BackButton,
+		Qt::ForwardButton
+	};
+}
+
+QString Settings::GetMouseButtonName(Qt::MouseButton button)
+{
+	switch(button)
+	{
+		case Qt::LeftButton:    return tr("Left");
+		case Qt::RightButton:   return tr("Right");
+		case Qt::MiddleButton:  return tr("Middle");
+		case Qt::BackButton:    return tr("Back");
+		case Qt::ForwardButton: return tr("Forward");
+		default:                return tr("Unknown");
+	}
+}
+
+QMap<Qt::MouseButton, int> Settings::GetMouseButtonMapping()
+{
+	QMap<Qt::MouseButton, int> result;
+	for(Qt::MouseButton button : GetMappableMouseButtons())
+	{
+		QString key = "mousemap/" + GetMouseButtonName(button).toLower();
+		if(settings.contains(key))
+			result[button] = settings.value(key).toInt();
+	}
+	return result;
+}
+
+void Settings::SetMouseButtonMapping(Qt::MouseButton button, int chiaki_button)
+{
+	QString key = "mousemap/" + GetMouseButtonName(button).toLower();
+	if(chiaki_button == 0)
+		settings.remove(key);
+	else
+		settings.setValue(key, chiaki_button);
+}
+
+void Settings::ClearMouseButtonMapping()
+{
+	for(Qt::MouseButton button : GetMappableMouseButtons())
+		settings.remove("mousemap/" + GetMouseButtonName(button).toLower());
 }

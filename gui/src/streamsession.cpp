@@ -303,6 +303,9 @@ StreamSessionConnectInfo::StreamSessionConnectInfo(
 	const bool keyboard_controller_enabled_setting = settings->GetKeyboardEnabled();
 	this->keyboard_controller_enabled = keyboard_controller_enabled_setting;
 	this->mouse_touch_enabled = settings->GetMouseTouchEnabled();
+	this->mouse_to_stick_enabled = settings->GetMouseToStickEnabled();
+	this->mouse_stick_sensitivity = settings->GetMouseStickSensitivity();
+	this->mouse_button_map = settings->GetMouseButtonMapping();
 	this->enable_keyboard = false;
 	this->enable_dualsense = true;
 	this->enable_idr_on_fec_failure = settings->GetIDROnFECFailureEnabled();
@@ -462,6 +465,9 @@ StreamSession::StreamSession(const StreamSessionConnectInfo &connect_info, QObje
 #endif
 	audio_buffer_size = connect_info.audio_buffer_size;
 	mouse_touch_enabled = connect_info.mouse_touch_enabled;
+	mouse_to_stick_enabled = connect_info.mouse_to_stick_enabled;
+	mouse_stick_sensitivity = connect_info.mouse_stick_sensitivity;
+	mouse_button_map = connect_info.mouse_button_map;
 	keyboard_controller_enabled = connect_info.keyboard_controller_enabled;
 	host = connect_info.host;
 	QByteArray host_str = connect_info.host.toUtf8();
@@ -534,6 +540,10 @@ StreamSession::StreamSession(const StreamSessionConnectInfo &connect_info, QObje
 			SendFeedbackState();
 		}
 	});
+	mouse_stick_reset_timer = new QTimer(this);
+	mouse_stick_reset_timer->setSingleShot(true);
+	mouse_stick_reset_timer->setInterval(50);
+	connect(mouse_stick_reset_timer, &QTimer::timeout, this, &StreamSession::ResetMouseStick);
 	// If duid isn't empty connect with psn
 	chiaki_connect_info.holepunch_session = NULL;
 	if(!connect_info.duid.isEmpty())
@@ -880,6 +890,15 @@ void StreamSession::GoHome()
 
 void StreamSession::HandleMousePressEvent(QMouseEvent *event)
 {
+	if(mouse_to_stick_enabled)
+	{
+		if(mouse_button_map.contains(event->button()))
+		{
+			SetControllerButton(mouse_button_map[event->button()], true);
+			SendFeedbackState();
+		}
+		return;
+	}
 	if(!mouse_touch_enabled)
 		return;
 	// left button for touchpad gestures, others => touchpad click
@@ -890,6 +909,15 @@ void StreamSession::HandleMousePressEvent(QMouseEvent *event)
 
 void StreamSession::HandleMouseReleaseEvent(QMouseEvent *event)
 {
+	if(mouse_to_stick_enabled)
+	{
+		if(mouse_button_map.contains(event->button()))
+		{
+			SetControllerButton(mouse_button_map[event->button()], false);
+			SendFeedbackState();
+		}
+		return;
+	}
 	if(!mouse_touch_enabled)
 		return;
 	// left button => end of touchpad gesture
@@ -907,6 +935,10 @@ void StreamSession::HandleMouseReleaseEvent(QMouseEvent *event)
 
 void StreamSession::HandleMouseMoveEvent(QMouseEvent *event, qreal width, qreal height)
 {
+	// In mouse-to-stick mode the window layer turns movement into relative
+	// deltas and calls HandleMouseStickMove(); do not also drive the touchpad.
+	if(mouse_to_stick_enabled)
+		return;
 	if(!mouse_touch_enabled)
 		return;
 	// left button with move => touchpad gesture, otherwise ignore
@@ -925,19 +957,29 @@ void StreamSession::HandleMouseMoveEvent(QMouseEvent *event, qreal width, qreal 
 	SendFeedbackState();
 }
 
-void StreamSession::HandleKeyboardEvent(QKeyEvent *event)
+void StreamSession::HandleMouseStickMove(qreal dx, qreal dy)
 {
-	if(!keyboard_controller_enabled)
+	if(!mouse_to_stick_enabled)
 		return;
-	if(key_map.contains(Qt::Key(event->key())) == false)
+	qint32 sx = qRound(dx * mouse_stick_sensitivity);
+	qint32 sy = qRound(dy * mouse_stick_sensitivity);
+	keyboard_state.right_x = (int16_t)qBound<qint32>(-0x7fff, sx, 0x7fff);
+	keyboard_state.right_y = (int16_t)qBound<qint32>(-0x7fff, sy, 0x7fff);
+	SendFeedbackState();
+	mouse_stick_reset_timer->start();
+}
+
+void StreamSession::ResetMouseStick()
+{
+	if(!mouse_to_stick_enabled)
 		return;
+	keyboard_state.right_x = 0;
+	keyboard_state.right_y = 0;
+	SendFeedbackState();
+}
 
-	if(event->isAutoRepeat())
-		return;
-
-	int button = key_map[Qt::Key(event->key())];
-	bool press_event = event->type() == QEvent::Type::KeyPress;
-
+void StreamSession::SetControllerButton(int button, bool press_event)
+{
 	switch(button)
 	{
 		case CHIAKI_CONTROLLER_ANALOG_BUTTON_L2:
@@ -977,7 +1019,22 @@ void StreamSession::HandleKeyboardEvent(QKeyEvent *event)
 				keyboard_state.buttons &= ~button;
 			break;
 	}
+}
 
+void StreamSession::HandleKeyboardEvent(QKeyEvent *event)
+{
+	if(!keyboard_controller_enabled)
+		return;
+	if(key_map.contains(Qt::Key(event->key())) == false)
+		return;
+
+	if(event->isAutoRepeat())
+		return;
+
+	int button = key_map[Qt::Key(event->key())];
+	bool press_event = event->type() == QEvent::Type::KeyPress;
+
+	SetControllerButton(button, press_event);
 	SendFeedbackState();
 }
 
