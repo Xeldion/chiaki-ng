@@ -305,6 +305,9 @@ StreamSessionConnectInfo::StreamSessionConnectInfo(
 	this->mouse_touch_enabled = settings->GetMouseTouchEnabled();
 	this->mouse_to_stick_enabled = settings->GetMouseToStickEnabled();
 	this->mouse_stick_sensitivity = settings->GetMouseStickSensitivity();
+	this->mouse_stick_sensitivity_y = settings->GetMouseStickSensitivityY();
+	this->mouse_stick_deadzone = settings->GetMouseStickDeadzone();
+	this->mouse_stick_circular_shape = settings->GetMouseStickCircularShape();
 	this->mouse_button_map = settings->GetMouseButtonMapping();
 	this->enable_keyboard = false;
 	this->enable_dualsense = true;
@@ -467,6 +470,9 @@ StreamSession::StreamSession(const StreamSessionConnectInfo &connect_info, QObje
 	mouse_touch_enabled = connect_info.mouse_touch_enabled;
 	mouse_to_stick_enabled = connect_info.mouse_to_stick_enabled;
 	mouse_stick_sensitivity = connect_info.mouse_stick_sensitivity;
+	mouse_stick_sensitivity_y = connect_info.mouse_stick_sensitivity_y;
+	mouse_stick_deadzone = connect_info.mouse_stick_deadzone;
+	mouse_stick_circular_shape = connect_info.mouse_stick_circular_shape;
 	mouse_button_map = connect_info.mouse_button_map;
 	keyboard_controller_enabled = connect_info.keyboard_controller_enabled;
 	host = connect_info.host;
@@ -961,10 +967,46 @@ void StreamSession::HandleMouseStickMove(qreal dx, qreal dy)
 {
 	if(!mouse_to_stick_enabled)
 		return;
-	qint32 sx = qRound(dx * mouse_stick_sensitivity);
-	qint32 sy = qRound(dy * mouse_stick_sensitivity);
-	keyboard_state.right_x = (int16_t)qBound<qint32>(-0x7fff, sx, 0x7fff);
-	keyboard_state.right_y = (int16_t)qBound<qint32>(-0x7fff, sy, 0x7fff);
+	// GIMX-style smoothing: exponential moving average over the per-event
+	// deltas. Raw dx jumps around (+4, -4, +2, ...) due to hand micro-jitter;
+	// the EMA damps that noise so the stick moves smoothly at constant speed.
+	const qreal alpha = 0.20;
+	mouse_stick_vel_x += (dx - mouse_stick_vel_x) * alpha;
+	mouse_stick_vel_y += (dy - mouse_stick_vel_y) * alpha;
+	qint32 raw_x = qBound<qint32>(-0x7fff, qRound(mouse_stick_vel_x * mouse_stick_sensitivity), 0x7fff);
+	qint32 raw_y = qBound<qint32>(-0x7fff, qRound(mouse_stick_vel_y * mouse_stick_sensitivity_y), 0x7fff);
+
+	// Dead-zone compensation: remap each axis magnitude from [0, 32767] to
+	// [deadzone, 32767] so small mouse movements jump straight past the game's
+	// analog dead zone instead of being silently swallowed by it.
+	qint32 dz = (qint32)((qint64)mouse_stick_deadzone * 0x7fff / 100);
+	if(raw_x != 0)
+	{
+		qint32 out = dz + (qint32)((qint64)qAbs(raw_x) * (0x7fff - dz) / 0x7fff);
+		raw_x = (raw_x > 0) ? out : -out;
+	}
+	if(raw_y != 0)
+	{
+		qint32 out = dz + (qint32)((qint64)qAbs(raw_y) * (0x7fff - dz) / 0x7fff);
+		raw_y = (raw_y > 0) ? out : -out;
+	}
+
+	// Circular shape: clamp the combined vector to the unit circle so diagonal
+	// aiming isn't faster than axis-aligned aiming.
+	if(mouse_stick_circular_shape)
+	{
+		double mx = (double)raw_x, my = (double)raw_y;
+		double mag = qSqrt(mx * mx + my * my);
+		if(mag > 0x7fff)
+		{
+			double s = 0x7fff / mag;
+			raw_x = qRound(mx * s);
+			raw_y = qRound(my * s);
+		}
+	}
+
+	keyboard_state.right_x = (int16_t)raw_x;
+	keyboard_state.right_y = (int16_t)raw_y;
 	SendFeedbackState();
 	mouse_stick_reset_timer->start();
 }
@@ -973,6 +1015,8 @@ void StreamSession::ResetMouseStick()
 {
 	if(!mouse_to_stick_enabled)
 		return;
+	mouse_stick_vel_x = 0.0;
+	mouse_stick_vel_y = 0.0;
 	keyboard_state.right_x = 0;
 	keyboard_state.right_y = 0;
 	SendFeedbackState();

@@ -2419,16 +2419,54 @@ DialogView {
                             Layout.alignment: Qt.AlignRight
                             Label {
                                 Layout.alignment: Qt.AlignRight
-                                text: qsTr("Mouse Stick Sensitivity:")
+                                text: qsTr("Horizontal Sensitivity:")
                             }
                             C.Slider {
                                 Layout.preferredWidth: 250
-                                from: 1
-                                to: 2000
-                                stepSize: 1
+                                from: 100
+                                to: 30000
+                                stepSize: 100
                                 value: Chiaki.settings.mouseStickSensitivity
                                 onMoved: Chiaki.settings.mouseStickSensitivity = value
                             }
+                        }
+                        RowLayout {
+                            spacing: 10
+                            Layout.alignment: Qt.AlignRight
+                            Label {
+                                Layout.alignment: Qt.AlignRight
+                                text: qsTr("Vertical Sensitivity:")
+                            }
+                            C.Slider {
+                                Layout.preferredWidth: 250
+                                from: 100
+                                to: 30000
+                                stepSize: 100
+                                value: Chiaki.settings.mouseStickSensitivityY
+                                onMoved: Chiaki.settings.mouseStickSensitivityY = value
+                            }
+                        }
+                        RowLayout {
+                            spacing: 10
+                            Layout.alignment: Qt.AlignRight
+                            Label {
+                                Layout.alignment: Qt.AlignRight
+                                text: qsTr("Mouse Stick Deadzone (%):")
+                            }
+                            C.Slider {
+                                Layout.preferredWidth: 250
+                                from: 0
+                                to: 50
+                                stepSize: 1
+                                value: Chiaki.settings.mouseStickDeadzone
+                                onMoved: Chiaki.settings.mouseStickDeadzone = value
+                            }
+                        }
+                        CheckBox {
+                            text: qsTr("Circular Stick Shape")
+                            checked: Chiaki.settings.mouseStickCircularShape
+                            onToggled: Chiaki.settings.mouseStickCircularShape = checked
+                            Layout.alignment: Qt.AlignRight
                         }
                         Label {
                             Layout.alignment: Qt.AlignRight
@@ -2450,11 +2488,9 @@ DialogView {
 
                                 C.ComboBox {
                                     Layout.preferredWidth: 170
-                                    model: Chiaki.settings.controllerButtonOptions
-                                    textRole: "buttonName"
-                                    valueRole: "buttonValue"
+                                    model: Chiaki.settings.mouseButtonOptions
                                     currentIndex: modelData.comboIndex
-                                    onActivated: Chiaki.settings.changeMouseButton(modelData.mouseButtonValue, currentValue)
+                                    onActivated: index => Chiaki.settings.changeMouseButton(modelData.mouseButtonValue, index)
                                 }
                             }
                         }

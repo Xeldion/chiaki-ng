@@ -1022,11 +1022,37 @@ void Settings::SetMouseToStickEnabled(bool enabled)
 
 int Settings::GetMouseStickSensitivity() const
 {
-	return settings.value("settings/mouse_stick_sensitivity", 500).toInt();
+	return settings.value("settings/mouse_stick_sensitivity", 3000).toInt();
 }
 void Settings::SetMouseStickSensitivity(int sensitivity)
 {
 	settings.setValue("settings/mouse_stick_sensitivity", sensitivity);
+}
+
+int Settings::GetMouseStickSensitivityY() const
+{
+	return settings.value("settings/mouse_stick_sensitivity_y", 3000).toInt();
+}
+void Settings::SetMouseStickSensitivityY(int sensitivity)
+{
+	settings.setValue("settings/mouse_stick_sensitivity_y", sensitivity);
+}
+
+int Settings::GetMouseStickDeadzone() const
+{
+	return settings.value("settings/mouse_stick_deadzone", 15).toInt();
+}
+void Settings::SetMouseStickDeadzone(int deadzone)
+{
+	settings.setValue("settings/mouse_stick_deadzone", deadzone);
+}
+bool Settings::GetMouseStickCircularShape() const
+{
+	return settings.value("settings/mouse_stick_circular_shape", true).toBool();
+}
+void Settings::SetMouseStickCircularShape(bool circular)
+{
+	settings.setValue("settings/mouse_stick_circular_shape", circular);
 }
 
 

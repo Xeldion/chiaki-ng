@@ -445,6 +445,15 @@ class Settings : public QObject
 		int GetMouseStickSensitivity() const;
 		void SetMouseStickSensitivity(int sensitivity);
 
+		int GetMouseStickSensitivityY() const;
+		void SetMouseStickSensitivityY(int sensitivity);
+
+		int GetMouseStickDeadzone() const;
+		void SetMouseStickDeadzone(int deadzone);
+
+		bool GetMouseStickCircularShape() const;
+		void SetMouseStickCircularShape(bool circular);
+
 		bool GetDpadTouchEnabled() const;
 		void SetDpadTouchEnabled(bool enabled);
 

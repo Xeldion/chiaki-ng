@@ -83,8 +83,11 @@ class QmlSettings : public QObject
     Q_PROPERTY(bool mouseTouchEnabled READ mouseTouchEnabled WRITE setMouseTouchEnabled NOTIFY mouseTouchEnabledChanged)
     Q_PROPERTY(bool mouseToStickEnabled READ mouseToStickEnabled WRITE setMouseToStickEnabled NOTIFY mouseToStickEnabledChanged)
     Q_PROPERTY(int mouseStickSensitivity READ mouseStickSensitivity WRITE setMouseStickSensitivity NOTIFY mouseStickSensitivityChanged)
+    Q_PROPERTY(int mouseStickSensitivityY READ mouseStickSensitivityY WRITE setMouseStickSensitivityY NOTIFY mouseStickSensitivityYChanged)
+    Q_PROPERTY(int mouseStickDeadzone READ mouseStickDeadzone WRITE setMouseStickDeadzone NOTIFY mouseStickDeadzoneChanged)
+    Q_PROPERTY(bool mouseStickCircularShape READ mouseStickCircularShape WRITE setMouseStickCircularShape NOTIFY mouseStickCircularShapeChanged)
     Q_PROPERTY(QVariantList mouseButtonMapping READ mouseButtonMapping NOTIFY mouseButtonMappingChanged)
-    Q_PROPERTY(QVariantList controllerButtonOptions READ controllerButtonOptions CONSTANT)
+    Q_PROPERTY(QStringList mouseButtonOptions READ mouseButtonOptions CONSTANT)
     Q_PROPERTY(bool keyboardEnabled READ keyboardEnabled WRITE setKeyboardEnabled NOTIFY keyboardEnabledChanged)
     Q_PROPERTY(bool dpadTouchEnabled READ dpadTouchEnabled WRITE setDpadTouchEnabled NOTIFY dpadTouchEnabledChanged)
     Q_PROPERTY(bool iDROnFECFailureEnabled READ iDROnFECFailureEnabled WRITE setIDROnFECFailureEnabled NOTIFY iDROnFECFailureEnabledChanged)
@@ -557,6 +560,15 @@ public:
     int mouseStickSensitivity() const;
     void setMouseStickSensitivity(int sensitivity);
 
+    int mouseStickSensitivityY() const;
+    void setMouseStickSensitivityY(int sensitivity);
+
+    int mouseStickDeadzone() const;
+    void setMouseStickDeadzone(int deadzone);
+
+    bool mouseStickCircularShape() const;
+    void setMouseStickCircularShape(bool circular);
+
     bool keyboardEnabled() const;
     void setKeyboardEnabled(bool enabled);
 
@@ -607,13 +619,13 @@ public:
     QVariantList registeredHosts() const;
     QVariantList controllerMapping() const;
     QVariantList mouseButtonMapping() const;
-    QVariantList controllerButtonOptions() const;
+    QStringList mouseButtonOptions() const;
     QStringList profiles() const;
 
     Q_INVOKABLE void deleteRegisteredHost(int index);
     Q_INVOKABLE void refreshAudioDevices();
     Q_INVOKABLE QString changeControllerKey(int button, int key);
-    Q_INVOKABLE void changeMouseButton(int mouseButton, int chiakiButton);
+    Q_INVOKABLE void changeMouseButton(int mouseButton, int comboIndex);
     Q_INVOKABLE void clearKeyMapping();
     Q_INVOKABLE void exportSettings();
     Q_INVOKABLE QString chooseSteamBasePath();
@@ -696,6 +708,9 @@ signals:
     void mouseTouchEnabledChanged();
     void mouseToStickEnabledChanged();
     void mouseStickSensitivityChanged();
+    void mouseStickSensitivityYChanged();
+    void mouseStickDeadzoneChanged();
+    void mouseStickCircularShapeChanged();
     void mouseButtonMappingChanged();
     void keyboardEnabledChanged();
     void dpadTouchEnabledChanged();

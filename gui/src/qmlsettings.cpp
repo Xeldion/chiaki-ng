@@ -831,6 +831,39 @@ void QmlSettings::setMouseStickSensitivity(int sensitivity)
     emit mouseStickSensitivityChanged();
 }
 
+int QmlSettings::mouseStickSensitivityY() const
+{
+    return settings->GetMouseStickSensitivityY();
+}
+
+void QmlSettings::setMouseStickSensitivityY(int sensitivity)
+{
+    settings->SetMouseStickSensitivityY(sensitivity);
+    emit mouseStickSensitivityYChanged();
+}
+
+int QmlSettings::mouseStickDeadzone() const
+{
+    return settings->GetMouseStickDeadzone();
+}
+
+void QmlSettings::setMouseStickDeadzone(int deadzone)
+{
+    settings->SetMouseStickDeadzone(deadzone);
+    emit mouseStickDeadzoneChanged();
+}
+
+bool QmlSettings::mouseStickCircularShape() const
+{
+    return settings->GetMouseStickCircularShape();
+}
+
+void QmlSettings::setMouseStickCircularShape(bool circular)
+{
+    settings->SetMouseStickCircularShape(circular);
+    emit mouseStickCircularShapeChanged();
+}
+
 bool QmlSettings::keyboardEnabled() const
 {
     return settings->GetKeyboardEnabled();
@@ -1786,8 +1819,8 @@ QVariantList QmlSettings::controllerMapping() const
 QVariantList QmlSettings::mouseButtonMapping() const
 {
     auto map = settings->GetMouseButtonMapping();
-    // Build the same ordered list controllerButtonOptions() exposes so we can
-    // hand QML a deterministic combo index (index 0 = "Unbound").
+    // Same ordered list mouseButtonOptions() exposes, so comboIndex lines up
+    // (index 0 = "Unbound").
     QList<int> ordered;
     ordered.append(0);
     auto buttons = settings->GetControllerMapping();
@@ -1800,33 +1833,33 @@ QVariantList QmlSettings::mouseButtonMapping() const
         QVariantMap m;
         m["mouseButtonName"] = Settings::GetMouseButtonName(button);
         m["mouseButtonValue"] = static_cast<int>(button);
-        m["buttonValue"] = chiaki;
         m["comboIndex"] = ordered.indexOf(chiaki);
         out.append(m);
     }
     return out;
 }
 
-QVariantList QmlSettings::controllerButtonOptions() const
+QStringList QmlSettings::mouseButtonOptions() const
 {
-    QVariantList out;
-    QVariantMap none;
-    none["buttonName"] = tr("Unbound");
-    none["buttonValue"] = 0;
-    out.append(none);
+    QStringList out;
+    out.append(tr("Unbound"));
     auto key_map = settings->GetControllerMapping();
-    for (auto it = key_map.cbegin(); it != key_map.cend(); ++it) {
-        QVariantMap m;
-        m["buttonName"] = Settings::GetChiakiControllerButtonName(it.key());
-        m["buttonValue"] = it.key();
-        out.append(m);
-    }
+    for (auto it = key_map.cbegin(); it != key_map.cend(); ++it)
+        out.append(Settings::GetChiakiControllerButtonName(it.key()));
     return out;
 }
 
-void QmlSettings::changeMouseButton(int mouseButton, int chiakiButton)
+void QmlSettings::changeMouseButton(int mouseButton, int comboIndex)
 {
-    settings->SetMouseButtonMapping(static_cast<Qt::MouseButton>(mouseButton), chiakiButton);
+    int chiaki_button = 0;
+    if(comboIndex > 0)
+    {
+        auto key_map = settings->GetControllerMapping();
+        auto keys = key_map.keys();
+        if(comboIndex <= keys.size())
+            chiaki_button = keys[comboIndex - 1];
+    }
+    settings->SetMouseButtonMapping(static_cast<Qt::MouseButton>(mouseButton), chiaki_button);
     emit mouseButtonMappingChanged();
 }
 
@@ -2017,6 +2050,9 @@ void QmlSettings::refreshAllKeys()
     emit mouseTouchEnabledChanged();
     emit mouseToStickEnabledChanged();
     emit mouseStickSensitivityChanged();
+    emit mouseStickSensitivityYChanged();
+    emit mouseStickDeadzoneChanged();
+    emit mouseStickCircularShapeChanged();
     emit keyboardEnabledChanged();
     emit dpadTouchEnabledChanged();
     emit iDROnFECFailureEnabledChanged();
